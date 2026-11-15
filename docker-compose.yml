@@ -69,7 +69,9 @@ services:
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend:/app:ro
+      # Vite writes a timestamped temporary bundle beside vite.config.js when
+      # loading the config, so the development source mount must be writable.
+      - ./frontend:/app
       - /app/node_modules
     depends_on:
       - backend
