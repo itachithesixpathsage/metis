@@ -63,7 +63,9 @@ services:
       target: development
     container_name: metis-frontend
     environment:
-      VITE_API_BASE_URL: http://localhost:8000/api/v1
+      # Keep API requests same-origin in the browser. Vite forwards them to
+      # the backend container, avoiding cross-origin Cloud Shell auth redirects.
+      VITE_API_PROXY_TARGET: http://backend:8000
     ports:
       - "5173:5173"
     volumes:
