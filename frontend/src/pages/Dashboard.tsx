@@ -13,42 +13,36 @@ export function Dashboard() {
           value="$2,847,392"
           change="+2.34%"
           changeType="positive"
-          icon="💰"
         />
         <StatCard
           label="Portfolio VaR (95%)"
           value="-$34,218"
           change="-1.2%"
           changeType="positive"
-          icon="⚠️"
         />
         <StatCard
           label="Expected Shortfall (95%)"
           value="-$47,891"
           change="-0.8%"
           changeType="positive"
-          icon="📉"
         />
         <StatCard
           label="Max Drawdown"
           value="-4.72%"
           change="+0.3%"
           changeType="negative"
-          icon="📊"
         />
         <StatCard
           label="Gross Exposure"
           value="$8,940,000"
           change="+5.1%"
           changeType="neutral"
-          icon="📈"
         />
         <StatCard
           label="Net Exposure"
           value="$1,240,000"
           change="-2.4%"
           changeType="positive"
-          icon="🔄"
         />
       </div>
 

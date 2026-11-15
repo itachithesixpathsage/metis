@@ -1,79 +1,46 @@
 import { cn } from '../../utils/cn';
 
-export const gridDashboard = 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6';
+export const gridDashboard = 'grid-dashboard';
 
-interface PageProps {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}
-
-export function Page({ title, subtitle, children }: PageProps) {
-  return (
-    <div className="page-content">
-      <div className="page-header-content mb-6">
-        <h1 className="text-2xl font-semibold text-slate-100">{title}</h1>
-        {subtitle && <p className="text-slate-400 mt-1">{subtitle}</p>}
-      </div>
-      <div className="animate-in">{children}</div>
+interface PageProps { title: string; subtitle?: string; children: React.ReactNode; eyebrow?: string; action?: React.ReactNode; }
+export function Page({ title, subtitle, children, eyebrow = 'Portfolio intelligence', action }: PageProps) {
+  return <div className="page-content animate-in">
+    <div className="page-heading">
+      <div><div className="eyebrow">{eyebrow}</div><h1 className="page-title">{title}</h1>{subtitle && <p className="page-subtitle">{subtitle}</p>}</div>
+      {action}
     </div>
-  );
+    {children}
+  </div>;
 }
 
-interface CardProps {
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-  className?: string;
-  action?: React.ReactNode;
-}
-
+interface CardProps { title: string; subtitle?: string; children: React.ReactNode; className?: string; action?: React.ReactNode; }
 export function Card({ title, subtitle, children, className, action }: CardProps) {
-  return (
-    <div className={cn('card card-hover', className)}>
-      <div className="p-5 border-b border-slate-800 flex items-start justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-slate-100">{title}</h3>
-          {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
-        </div>
-        {action}
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  );
+  return <section className={cn('card card-hover', className)}>
+    <div className="card-head"><div><h2 className="card-title">{title}</h2>{subtitle && <p className="card-subtitle">{subtitle}</p>}</div>{action}</div>
+    <div className="card-body">{children}</div>
+  </section>;
 }
 
-interface StatCardProps {
-  label: string;
-  value: string | number;
-  change?: string;
-  changeType?: 'positive' | 'negative' | 'neutral';
-  icon?: React.ReactNode;
+interface StatCardProps { label: string; value: string | number; change?: string; changeType?: 'positive' | 'negative' | 'neutral'; icon?: React.ReactNode; }
+export function StatCard({ label, value, change, changeType = 'neutral' }: StatCardProps) {
+  return <div className="card stat-card">
+    <div className="stat-label">{label}</div><div className="stat-value mono">{value}</div>
+    {change && <div className="stat-foot"><span className={cn('stat-change', `stat-${changeType}`)}>{change}</span><span>vs previous period</span></div>}
+  </div>;
 }
 
-export function StatCard({ label, value, change, changeType = 'neutral', icon }: StatCardProps) {
-  return (
-    <div className="card card-hover p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{label}</p>
-          <p className="text-2xl font-semibold text-slate-100 mono mt-1">{value}</p>
-        </div>
-        {icon && <div className="w-10 h-10 rounded-lg bg-slate-800/50 flex items-center justify-center text-xl">{icon}</div>}
-      </div>
-      {change && (
-        <div className="mt-3 flex items-center gap-1">
-          <span className={cn(
-            'text-xs font-medium',
-            changeType === 'positive' && 'text-green-400',
-            changeType === 'negative' && 'text-red-400',
-            changeType === 'neutral' && 'text-slate-400'
-          )}>
-            {change}
-          </span>
-          <span className="text-xs text-slate-500">vs previous period</span>
-        </div>
-      )}
+interface ModulePlaceholderProps { name: string; description: string; code: string; focus: string[]; }
+export function ModulePlaceholder({ name, description, code, focus }: ModulePlaceholderProps) {
+  return <div className="card module-panel">
+    <div className="module-copy">
+      <div className="eyebrow">Research workspace / {code}</div>
+      <h2 className="module-title">A clearer view of {name.toLowerCase()}.</h2>
+      <p>{description} This workspace is being prepared for the research workflow, with the core inputs and outputs brought together in one place.</p>
+      <div className="module-meta">{focus.map(item => <span key={item}>{item}</span>)}</div>
     </div>
-  );
+    <div className="module-visual" aria-hidden="true">
+      <div className="module-orbit"/><div className="module-core">{code}</div>
+      <span className="module-chip one">INPUTS</span><span className="module-chip two">ANALYSIS</span><span className="module-chip three">OUTPUT</span>
+    </div>
+  </div>;
 }
