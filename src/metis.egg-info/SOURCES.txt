@@ -1,3 +1,4 @@
+README.md
 pyproject.toml
 src/metis/__init__.py
 src/metis.egg-info/PKG-INFO
@@ -7,6 +8,7 @@ src/metis.egg-info/requires.txt
 src/metis.egg-info/top_level.txt
 src/metis/api/__init__.py
 src/metis/api/health.py
+src/metis/api/mock_data.py
 src/metis/core/config.py
 src/metis/core/database.py
 src/metis/core/logging.py

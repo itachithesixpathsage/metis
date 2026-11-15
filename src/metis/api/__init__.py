@@ -41,9 +41,9 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=settings.app_version,
         description="Quantitative FX Research & Portfolio Risk Intelligence Platform",
-        docs_url="/docs" if settings.debug else None,
-        redoc_url="/redoc" if settings.debug else None,
-        openapi_url="/openapi.json" if settings.debug else None,
+        docs_url="/docs",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
         lifespan=lifespan,
     )
 
@@ -58,6 +58,10 @@ def create_app() -> FastAPI:
 
     # Include routers
     from metis.api.health import router as health_router
+    from metis.api.mock_data import router as mock_data_router
+    from metis.api.workflows import router as workflows_router
     app.include_router(health_router, prefix=settings.api.api_prefix)
+    app.include_router(mock_data_router, prefix=settings.api.api_prefix)
+    app.include_router(workflows_router, prefix=settings.api.api_prefix)
 
     return app
