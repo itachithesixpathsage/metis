@@ -1,0 +1,57 @@
+# Backend Dockerfile for Project Métis
+# Multi-stage build for development and production
+
+# Base stage with Python and system dependencies
+FROM python:3.12-slim AS base
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Install uv for fast dependency management
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copy pyproject.toml and install dependencies
+COPY pyproject.toml ./
+RUN uv pip install --system --no-cache -e ".[dev]"
+
+# Development stage
+FROM base AS development
+
+# Install development tools
+RUN uv pip install --system --no-cache watchdog
+
+# Copy source code
+COPY src/ ./src/
+COPY alembic/ ./alembic/
+COPY tests/ ./tests/
+
+# Expose port
+EXPOSE 8000
+
+# Default command (overridden in docker-compose)
+CMD ["uvicorn", "metis.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# Production stage
+FROM base AS production
+
+# Copy source code
+COPY src/ ./src/
+COPY alembic/ ./alembic/
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash metis && \
+    chown -R metis:metis /app
+USER metis
+
+# Expose port
+EXPOSE 8000
+
+# Production command
+CMD ["uvicorn", "metis.api:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

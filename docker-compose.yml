@@ -1,0 +1,86 @@
+version: "3.8"
+
+services:
+  # PostgreSQL with TimescaleDB extension
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: metis-timescaledb
+    environment:
+      POSTGRES_USER: ${METIS_DB_USERNAME:-metis}
+      POSTGRES_PASSWORD: ${METIS_DB_PASSWORD:-metis_dev_password}
+      POSTGRES_DB: ${METIS_DB_NAME:-metis}
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+      - ./docker/init-timescaledb.sql:/docker-entrypoint-initdb.d/init-timescaledb.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${METIS_DB_USERNAME:-metis} -d ${METIS_DB_NAME:-metis}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - metis-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: metis-backend
+    environment:
+      METIS_DB_HOST: timescaledb
+      METIS_DB_PORT: 5432
+      METIS_DB_USERNAME: ${METIS_DB_USERNAME:-metis}
+      METIS_DB_PASSWORD: ${METIS_DB_PASSWORD:-metis_dev_password}
+      METIS_DB_NAME: ${METIS_DB_NAME:-metis}
+      METIS_API_HOST: 0.0.0.0
+      METIS_API_PORT: 8000
+      METIS_API_RELOAD: "true"
+      METIS_LOG_LEVEL: DEBUG
+      METIS_LOG_JSON_FORMAT: "false"
+      METIS_ENVIRONMENT: development
+      METIS_DEBUG: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src:ro
+      - ./pyproject.toml:/app/pyproject.toml:ro
+      - ./alembic:/app/alembic:ro
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    command: uvicorn metis.api:create_app --factory --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    networks:
+      - metis-network
+
+  # Frontend development server
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: metis-frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app:ro
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    restart: unless-stopped
+    networks:
+      - metis-network
+
+volumes:
+  timescaledb_data:
+    driver: local
+
+networks:
+  metis-network:
+    driver: bridge
