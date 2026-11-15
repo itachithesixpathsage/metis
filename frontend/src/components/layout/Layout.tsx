@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { cn } from '../utils/cn';
+import { cn } from '../../utils/cn';
 
-export function Layout() {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+export function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -22,7 +25,6 @@ export function Layout() {
       {/* Sidebar */}
       <Sidebar
         className={cn('sidebar', sidebarOpen ? '' : 'sidebar-collapsed')}
-        open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
@@ -30,7 +32,7 @@ export function Layout() {
       <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
         <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-auto">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>

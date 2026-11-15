@@ -1,5 +1,7 @@
 import { cn } from '../../utils/cn';
 
+export const gridDashboard = 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mb-6';
+
 interface PageProps {
   title: string;
   subtitle?: string;

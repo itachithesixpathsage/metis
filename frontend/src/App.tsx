@@ -1,6 +1,4 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Sidebar } from './components/layout/Sidebar';
-import { Header } from './components/layout/Header';
 import { Dashboard } from './pages/Dashboard';
 import { MarketData } from './pages/MarketData';
 import { StatisticalAnalysis } from './pages/StatisticalAnalysis';

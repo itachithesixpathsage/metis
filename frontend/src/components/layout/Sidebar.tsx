@@ -14,11 +14,10 @@ const navigation = [
 
 interface SidebarProps {
   className?: string;
-  open: boolean;
   onClose: () => void;
 }
 
-export function Sidebar({ className, open, onClose }: SidebarProps) {
+export function Sidebar({ className, onClose }: SidebarProps) {
   const location = useLocation();
 
   return (
