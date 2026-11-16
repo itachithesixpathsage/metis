@@ -57,7 +57,7 @@ def upgrade() -> None:
     # Market observations (TimescaleDB hypertable)
     op.create_table(
         'observations',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text('uuid_generate_v4()')),
+        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=False, server_default=sa.text('uuid_generate_v4()')),
         sa.Column('instrument_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('market_data.instruments.id'), nullable=False),
         sa.Column('timestamp', sa.DateTime(timezone=True), nullable=False),
         sa.Column('frequency', sa.String(10), nullable=False),
@@ -74,6 +74,7 @@ def upgrade() -> None:
         sa.Column('is_valid', sa.Boolean, nullable=False, server_default='true'),
         sa.Column('validation_errors', postgresql.JSONB),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('now()')),
+        sa.PrimaryKeyConstraint('id', 'timestamp', name='pk_observations'),
         schema='market_data',
     )
     op.create_index('ix_observations_instrument_timestamp', 'observations', ['instrument_id', 'timestamp'], schema='market_data')
@@ -154,7 +155,7 @@ def upgrade() -> None:
     # Portfolio snapshots (for P&L tracking)
     op.create_table(
         'portfolio_snapshots',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text('uuid_generate_v4()')),
+        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=False, server_default=sa.text('uuid_generate_v4()')),
         sa.Column('portfolio_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('portfolio.portfolios.id', ondelete='CASCADE'), nullable=False),
         sa.Column('timestamp', sa.DateTime(timezone=True), nullable=False),
         sa.Column('total_value', sa.Numeric(30, 2), nullable=False),
@@ -164,6 +165,7 @@ def upgrade() -> None:
         sa.Column('net_exposure', sa.Numeric(30, 2), nullable=False, server_default='0'),
         sa.Column('currency_exposures', postgresql.JSONB),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('now()')),
+        sa.PrimaryKeyConstraint('id', 'timestamp', name='pk_portfolio_snapshots'),
         schema='portfolio',
     )
     op.create_index('ix_ps_portfolio_timestamp', 'portfolio_snapshots', ['portfolio_id', 'timestamp'], schema='portfolio')
@@ -178,7 +180,7 @@ def upgrade() -> None:
     # Returns series
     op.create_table(
         'returns_series',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text('uuid_generate_v4()')),
+        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=False, server_default=sa.text('uuid_generate_v4()')),
         sa.Column('instrument_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('market_data.instruments.id'), nullable=False),
         sa.Column('timestamp', sa.DateTime(timezone=True), nullable=False),
         sa.Column('frequency', sa.String(10), nullable=False),
@@ -186,6 +188,7 @@ def upgrade() -> None:
         sa.Column('log_return', sa.Numeric(20, 10)),
         sa.Column('price', sa.Numeric(20, 10), nullable=False),
         sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('now()')),
+        sa.PrimaryKeyConstraint('id', 'timestamp', name='pk_returns_series'),
         schema='analytics',
     )
     op.create_index('ix_returns_instrument_timestamp', 'returns_series', ['instrument_id', 'timestamp'], schema='analytics')
