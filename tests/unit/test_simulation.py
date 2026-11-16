@@ -220,7 +220,7 @@ class TestGARCH:
         forecasts = []
         sigma2_t = sigma2_last
         eps_t = eps_last
-        for h in range(1, 40):
+        for h in range(1, 100):
             sigma2_t = omega + alpha * eps_t**2 + beta * sigma2_t
             forecasts.append(sigma2_t)
             eps_t = 0  # Expected future shocks are zero

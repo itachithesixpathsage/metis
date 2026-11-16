@@ -130,12 +130,10 @@ class Settings(BaseSettings):
         """Order sources so real environment variables override the `.env` file.
 
         pydantic-settings merges sources with ``deep_update(source_state, state)``,
-        so the last source wins. The default order (``init -> env -> dotenv``) lets
-        ``.env`` overwrite process environment variables. Putting the dotenv file
-        source *before* the live environment source makes real env vars take
-        precedence while still allowing ``.env`` to supply defaults.
+        Pydantic settings sources are ordered from highest to lowest priority.
+        Keep live environment values ahead of dotenv values.
         """
-        return init_settings, dotenv_settings, env_settings, file_secret_settings
+        return init_settings, env_settings, dotenv_settings, file_secret_settings
 
 
 @lru_cache

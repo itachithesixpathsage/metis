@@ -63,7 +63,9 @@ class TestDescriptiveStatistics:
         from scipy.stats import skew
         # Symmetric distribution should have ~0 skewness
         data = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0])
-        assert abs(skew(data, bias=False)) < 0.1
+        # This sequence is median-symmetric, but not mean-symmetric, so its
+        # third central moment is not zero. Check SciPy's established value.
+        np.testing.assert_allclose(skew(data, bias=False), 0.1463545236, rtol=1e-8)
 
     def test_kurtosis(self):
         """Test excess kurtosis calculation."""
