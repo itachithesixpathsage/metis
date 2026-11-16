@@ -216,14 +216,13 @@ class TestGARCH:
         # 1-step ahead forecast
         forecast_1 = omega + alpha * eps_last**2 + beta * sigma2_last
 
-        # Multi-step ahead (converges to unconditional)
+        # Multi-step variance forecasts use E[epsilon^2] = forecast variance.
         forecasts = []
-        sigma2_t = sigma2_last
-        eps_t = eps_last
-        for h in range(1, 100):
-            sigma2_t = omega + alpha * eps_t**2 + beta * sigma2_t
+        sigma2_t = forecast_1
+        forecasts.append(sigma2_t)
+        for h in range(2, 100):
+            sigma2_t = omega + (alpha + beta) * sigma2_t
             forecasts.append(sigma2_t)
-            eps_t = 0  # Expected future shocks are zero
 
         # Should converge to unconditional variance
         unconditional = omega / (1 - alpha - beta)
