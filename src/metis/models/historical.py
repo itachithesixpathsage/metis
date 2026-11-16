@@ -16,14 +16,15 @@ class HistoricalBar(Base):
     @declared_attr.directive
     def __table_args__(cls):
         constraints = (
-            UniqueConstraint("symbol", "timeframe", "timestamp", name="uq_historical_bar"),
-            Index("ix_historical_bars_query", "symbol", "timeframe", "timestamp"),
+            UniqueConstraint("symbol", "timeframe", "price_side", "timestamp", name="uq_historical_bar_side"),
+            Index("ix_historical_bars_query", "symbol", "timeframe", "price_side", "timestamp"),
         )
         return constraints + (({"schema": "market_data"},) if cls.metadata.info.get("use_market_schema", True) else ())
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     symbol: Mapped[str] = mapped_column(String(6), nullable=False)
     timeframe: Mapped[str] = mapped_column(String(3), nullable=False)
+    price_side: Mapped[str] = mapped_column(String(16), nullable=False, default="unspecified")
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=False, nullable=False)
     open: Mapped[float] = mapped_column(Float, nullable=False)
     high: Mapped[float] = mapped_column(Float, nullable=False)

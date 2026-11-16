@@ -23,11 +23,12 @@ class DatasetResponse(BaseModel):
 
 @router.get("/{symbol}", response_model=DatasetResponse,
             summary="Retrieve validated historical Forex OHLC observations")
-async def get_dataset(symbol: str, timeframe: str = Query(pattern="^(M15|H1)$"),
+async def get_dataset(symbol: str, timeframe: str = Query(pattern="^(M1|M15|H1)$"),
+                      price_side: str = Query(default="unspecified", pattern="^(bid|ask|unspecified)$"),
                       start: datetime = Query(), end: datetime = Query(),
                       session: AsyncSession = Depends(get_db_session)) -> DatasetResponse:
     if start.tzinfo is None or end.tzinfo is None or start >= end:
         raise HTTPException(status_code=422, detail="start/end must be timezone-aware and start < end")
-    records = await HistoricalDataService(session).retrieve(symbol, timeframe, start, end)
+    records = await HistoricalDataService(session).retrieve(symbol, timeframe, start, end, price_side)
     return DatasetResponse(symbol=symbol.upper().replace("/", "").replace("-", "").replace("_", ""),
                            timeframe=timeframe, start=start, end=end, observations=records)

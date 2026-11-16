@@ -23,16 +23,16 @@ def validate_observations(records: list[OHLCObservation], *, movement_limit: flo
                           minimum_observations: int = 1, calendar: SessionCalendar | None = None) -> QualityReport:
     report = QualityReport()
     session_calendar = calendar or FXSessionCalendar()
-    seen: set[tuple[str, str, object]] = set()
-    prior: dict[tuple[str, str], OHLCObservation] = {}
-    intervals = {"M15": timedelta(minutes=15), "H1": timedelta(hours=1)}
+    seen: set[tuple[str, str, str, object]] = set()
+    prior: dict[tuple[str, str, str], OHLCObservation] = {}
+    intervals = {"M1": timedelta(minutes=1), "M15": timedelta(minutes=15), "H1": timedelta(hours=1)}
     for record in records:
-        key = (record.symbol, record.timeframe, record.timestamp)
+        key = (record.symbol, record.timeframe, record.price_side, record.timestamp)
         if key in seen:
             report.duplicates.append(f"{record.symbol} {record.timeframe} {record.timestamp.isoformat()}")
             continue
         seen.add(key)
-        group = (record.symbol, record.timeframe)
+        group = (record.symbol, record.timeframe, record.price_side)
         previous = prior.get(group)
         if previous and record.timestamp < previous.timestamp:
             report.out_of_order.append(f"{record.symbol} {record.timestamp.isoformat()}")

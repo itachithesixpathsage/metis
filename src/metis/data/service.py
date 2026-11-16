@@ -30,17 +30,20 @@ class HistoricalDataService:
         report.invalid.extend(invalid)
         if report.accepted:
             values = [dict(symbol=x.symbol, timestamp=x.timestamp, timeframe=x.timeframe,
+                           price_side=x.price_side,
                            open=x.open, high=x.high, low=x.low, close=x.close, volume=x.volume,
                            volume_type=x.volume_type, source=x.source, ingested_at=x.ingested_at,
                            source_metadata=x.source_metadata) for x in report.accepted]
             dialect = self.session.get_bind().dialect.name
             insert_statement = sqlite_insert if dialect == "sqlite" else pg_insert
             statement = insert_statement(HistoricalBar).values(values).on_conflict_do_nothing(
-                index_elements=["symbol", "timeframe", "timestamp"])
+                index_elements=["symbol", "timeframe", "price_side", "timestamp"])
             await self.session.execute(statement)
         rejected = [dict(symbol=item.symbol if isinstance(item, OHLCObservation) else "UNKNOWN",
                          timestamp=item.timestamp if isinstance(item, OHLCObservation) else start,
-                         timeframe=timeframe, source=provider.name,
+                         timeframe=timeframe,
+                         price_side=item.price_side if isinstance(item, OHLCObservation) else "unspecified",
+                         source=provider.name,
                          ingested_at=datetime.now(timezone.utc),
                          source_metadata={"reason": reason, "observation": item.model_dump(mode="json")
                                           if isinstance(item, OHLCObservation) else item},
@@ -50,22 +53,23 @@ class HistoricalDataService:
             dialect = self.session.get_bind().dialect.name
             insert_statement = sqlite_insert if dialect == "sqlite" else pg_insert
             await self.session.execute(insert_statement(HistoricalBar).values(rejected).on_conflict_do_nothing(
-                index_elements=["symbol", "timeframe", "timestamp"]))
+                index_elements=["symbol", "timeframe", "price_side", "timestamp"]))
         if report.accepted or rejected:
             await self.session.commit()
         return report
 
     async def retrieve(self, symbol: str, timeframe: str, start: datetime,
-                       end: datetime) -> list[OHLCObservation]:
+                       end: datetime, price_side: str = "unspecified") -> list[OHLCObservation]:
         rows = (await self.session.scalars(select(HistoricalBar).where(
             HistoricalBar.symbol == symbol.upper().replace("/", "").replace("-", "").replace("_", ""),
             HistoricalBar.timeframe == timeframe, HistoricalBar.timestamp >= start,
-            HistoricalBar.timestamp < end, HistoricalBar.quality_status == "valid",
+            HistoricalBar.timestamp < end, HistoricalBar.price_side == price_side,
+            HistoricalBar.quality_status == "valid",
         ).order_by(HistoricalBar.timestamp))).all()
         observations = []
         for row in rows:
             values = {k: getattr(row, k) for k in (
-                "symbol", "timestamp", "timeframe", "open", "high", "low", "close", "volume",
+                "symbol", "timestamp", "timeframe", "price_side", "open", "high", "low", "close", "volume",
                 "volume_type", "source", "ingested_at", "source_metadata")}
             # SQLite does not preserve timezone metadata for DateTime(timezone=True).
             # Stored values are canonical UTC, so restore UTC on read for this dialect.

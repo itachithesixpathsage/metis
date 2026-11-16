@@ -7,8 +7,8 @@ from metis.data.schemas import OHLCObservation
 from metis.data.validation import validate_observations
 
 
-def bar(at, open_=1.1):
-    return OHLCObservation(symbol="eur/usd", timestamp=at, timeframe="M15", open=open_,
+def bar(at, open_=1.1, side="unspecified", timeframe="M15"):
+    return OHLCObservation(symbol="eur/usd", timestamp=at, timeframe=timeframe, price_side=side, open=open_,
                            high=open_ + .001, low=open_ - .001, close=open_, source="test")
 
 
@@ -44,3 +44,24 @@ def test_out_of_order_observations_are_reported():
     start = datetime(2024, 1, 1, tzinfo=timezone.utc)
     result = validate_observations([bar(start + timedelta(minutes=15)), bar(start)])
     assert len(result.out_of_order) == 1
+
+
+def test_bid_and_ask_at_same_timestamp_are_distinct_bars():
+    at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    result = validate_observations([bar(at, side="bid"), bar(at, side="ask")])
+    assert len(result.accepted) == 2
+    assert not result.duplicates
+
+
+def test_m1_timeframe_is_supported_and_has_one_minute_gap_interval():
+    at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    result = validate_observations([
+        bar(at, timeframe="M1"), bar(at + timedelta(minutes=2), timeframe="M1"),
+    ])
+    assert len(result.missing) == 1
+
+
+def test_duplicates_are_scoped_to_price_side():
+    at = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    result = validate_observations([bar(at, side="bid"), bar(at, side="bid")])
+    assert len(result.duplicates) == 1

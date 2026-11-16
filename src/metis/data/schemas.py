@@ -12,7 +12,8 @@ class OHLCObservation(BaseModel):
 
     symbol: str
     timestamp: datetime
-    timeframe: Literal["M15", "H1"]
+    timeframe: Literal["M1", "M15", "H1"]
+    price_side: Literal["bid", "ask", "unspecified"] = "unspecified"
     open: float
     high: float
     low: float
