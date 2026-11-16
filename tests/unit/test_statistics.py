@@ -32,7 +32,7 @@ class TestReturnsCalculation:
 
     def test_return_with_zero_price_raises(self):
         """Test that zero prices are handled."""
-        prices = np.array([100.0, 0.0, 101.0])
+        prices = np.array([0.0, 100.0, 101.0])
         with pytest.warns(RuntimeWarning):
             returns = prices[1:] / prices[:-1] - 1
         assert np.isinf(returns[0]) or np.isnan(returns[0])
@@ -63,7 +63,7 @@ class TestDescriptiveStatistics:
         from scipy.stats import skew
         # Symmetric distribution should have ~0 skewness
         data = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0])
-        assert abs(skew(data)) < 0.1
+        assert abs(skew(data, bias=False)) < 0.1
 
     def test_kurtosis(self):
         """Test excess kurtosis calculation."""
@@ -109,7 +109,7 @@ class TestRollingVolatility:
 
         assert abs(daily_factor - 15.8745) < 0.01
         assert abs(intraday_15min_factor - 155.563) < 0.1
-        assert abs(intraday_5min_factor - 269.928) < 0.1
+        assert abs(intraday_5min_factor - 269.399) < 0.1
         assert abs(intraday_1h_factor - 77.781) < 0.1
 
 
@@ -120,7 +120,7 @@ class TestCorrelation:
         """Test Pearson correlation coefficient."""
         np.random.seed(42)
         x = np.random.normal(0, 1, 1000)
-        y = 0.7 * x + 0.3 * np.random.normal(0, 1, 1000)
+        y = 0.7 * x + np.sqrt(1 - 0.7**2) * np.random.normal(0, 1, 1000)
         corr = np.corrcoef(x, y)[0, 1]
         # Should be close to 0.7
         assert abs(corr - 0.7) < 0.05

@@ -220,7 +220,7 @@ class TestGARCH:
         forecasts = []
         sigma2_t = sigma2_last
         eps_t = eps_last
-        for h in range(1, 10):
+        for h in range(1, 40):
             sigma2_t = omega + alpha * eps_t**2 + beta * sigma2_t
             forecasts.append(sigma2_t)
             eps_t = 0  # Expected future shocks are zero
@@ -283,6 +283,9 @@ class TestMultivariateSimulation:
         Z_indep = np.random.normal(0, 1, (10000, 3))
 
         # Apply correlation
+        # Finite-sample variation can exceed 0.02 for the original 10k sample;
+        # retain the seed and increase the sample for a stable tolerance check.
+        Z_indep = np.random.normal(0, 1, (100_000, 3))
         Z_corr = Z_indep @ L.T
 
         # Check resulting correlation

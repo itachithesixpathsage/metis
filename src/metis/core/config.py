@@ -112,11 +112,11 @@ class Settings(BaseSettings):
     environment: Literal["development", "staging", "production"] = "development"
     debug: bool = True
 
-    database: DatabaseSettings = DatabaseSettings()
-    api: APISettings = APISettings()
-    simulation: SimulationSettings = SimulationSettings()
-    market_data: MarketDataSettings = MarketDataSettings()
-    logging: LoggingSettings = LoggingSettings()
+    database: DatabaseSettings = Field(default_factory=DatabaseSettings)
+    api: APISettings = Field(default_factory=APISettings)
+    simulation: SimulationSettings = Field(default_factory=SimulationSettings)
+    market_data: MarketDataSettings = Field(default_factory=MarketDataSettings)
+    logging: LoggingSettings = Field(default_factory=LoggingSettings)
 
     @classmethod
     def settings_customise_sources(
