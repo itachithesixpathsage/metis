@@ -55,7 +55,7 @@ async def db_engine():
         echo=False,
         poolclass=StaticPool,
         connect_args={"check_same_thread": False},
-    )
+    ).execution_options(schema_translate_map={"market_data": None})
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

@@ -3,7 +3,8 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from metis.data.provider import HistoricalProvider, fetch_with_retries
@@ -32,7 +33,9 @@ class HistoricalDataService:
                            open=x.open, high=x.high, low=x.low, close=x.close, volume=x.volume,
                            volume_type=x.volume_type, source=x.source, ingested_at=x.ingested_at,
                            source_metadata=x.source_metadata) for x in report.accepted]
-            statement = insert(HistoricalBar).values(values).on_conflict_do_nothing(
+            dialect = self.session.get_bind().dialect.name
+            insert_statement = sqlite_insert if dialect == "sqlite" else pg_insert
+            statement = insert_statement(HistoricalBar).values(values).on_conflict_do_nothing(
                 index_elements=["symbol", "timeframe", "timestamp"])
             await self.session.execute(statement)
         rejected = [dict(symbol=item.symbol if isinstance(item, OHLCObservation) else "UNKNOWN",
@@ -44,7 +47,9 @@ class HistoricalDataService:
                          quality_status="suspicious" if isinstance(item, OHLCObservation) else "invalid")
                     for item, reason in [*report.suspicious, *report.invalid]]
         if rejected:
-            await self.session.execute(insert(HistoricalBar).values(rejected).on_conflict_do_nothing(
+            dialect = self.session.get_bind().dialect.name
+            insert_statement = sqlite_insert if dialect == "sqlite" else pg_insert
+            await self.session.execute(insert_statement(HistoricalBar).values(rejected).on_conflict_do_nothing(
                 index_elements=["symbol", "timeframe", "timestamp"]))
         if report.accepted or rejected:
             await self.session.commit()

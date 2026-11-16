@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import DateTime, Float, Index, JSON, String, UniqueConstraint
+from sqlalchemy.orm import declared_attr
 from sqlalchemy.orm import Mapped, mapped_column
 
 from metis.models import Base
@@ -11,9 +12,14 @@ from metis.models import Base
 
 class HistoricalBar(Base):
     __tablename__ = "historical_bars"
-    __table_args__ = (UniqueConstraint("symbol", "timeframe", "timestamp", name="uq_historical_bar"),
-                      Index("ix_historical_bars_query", "symbol", "timeframe", "timestamp"),
-                      {"schema": "market_data"})
+
+    @declared_attr.directive
+    def __table_args__(cls):
+        constraints = (
+            UniqueConstraint("symbol", "timeframe", "timestamp", name="uq_historical_bar"),
+            Index("ix_historical_bars_query", "symbol", "timeframe", "timestamp"),
+        )
+        return constraints + (({"schema": "market_data"},) if cls.metadata.info.get("use_market_schema", True) else ())
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     symbol: Mapped[str] = mapped_column(String(6), nullable=False)

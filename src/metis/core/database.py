@@ -13,18 +13,13 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import DeclarativeBase
 
 from metis.core.config import get_settings
 from metis.core.logging import get_logger
+from metis.models import Base
 
 logger = get_logger(__name__)
 settings = get_settings()
-
-
-class Base(DeclarativeBase):
-    """Base class for all database models."""
-    pass
 
 
 class DatabaseManager:

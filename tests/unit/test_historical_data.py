@@ -34,8 +34,8 @@ def test_rejects_naive_timestamps_and_invalid_prices():
 
 def test_weekend_gap_is_classified_as_closure():
     friday = datetime(2024, 1, 5, 21, 45, tzinfo=timezone.utc)
-    monday = datetime(2024, 1, 8, 0, 0, tzinfo=timezone.utc)
-    result = validate_observations([bar(friday), bar(monday)])
+    sunday_before_open = datetime(2024, 1, 7, 21, 45, tzinfo=timezone.utc)
+    result = validate_observations([bar(friday), bar(sunday_before_open)])
     assert result.closures
     assert not result.missing
 
