@@ -62,6 +62,16 @@ class HistoricalDataService:
             HistoricalBar.timeframe == timeframe, HistoricalBar.timestamp >= start,
             HistoricalBar.timestamp < end, HistoricalBar.quality_status == "valid",
         ).order_by(HistoricalBar.timestamp))).all()
-        return [OHLCObservation.model_validate({k: getattr(row, k) for k in (
-            "symbol", "timestamp", "timeframe", "open", "high", "low", "close", "volume",
-            "volume_type", "source", "ingested_at", "source_metadata")}) for row in rows]
+        observations = []
+        for row in rows:
+            values = {k: getattr(row, k) for k in (
+                "symbol", "timestamp", "timeframe", "open", "high", "low", "close", "volume",
+                "volume_type", "source", "ingested_at", "source_metadata")}
+            # SQLite does not preserve timezone metadata for DateTime(timezone=True).
+            # Stored values are canonical UTC, so restore UTC on read for this dialect.
+            if self.session.get_bind().dialect.name == "sqlite":
+                for key in ("timestamp", "ingested_at"):
+                    if values[key].tzinfo is None:
+                        values[key] = values[key].replace(tzinfo=timezone.utc)
+            observations.append(OHLCObservation.model_validate(values))
+        return observations
