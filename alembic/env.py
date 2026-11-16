@@ -28,9 +28,9 @@ target_metadata = Base.metadata
 
 
 def get_database_url() -> str:
-    """Get database URL from settings."""
+    """Get the async database URL used by this async Alembic environment."""
     settings = get_settings()
-    return settings.database.sync_url
+    return settings.database.async_url
 
 
 def run_migrations_offline() -> None:
