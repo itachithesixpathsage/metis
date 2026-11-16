@@ -55,6 +55,14 @@ Application settings use `METIS_` environment variables. See `.env.example` for 
 
 Interactive OpenAPI documentation is available at `/docs`; the schema is available at `/openapi.json`. Mock portfolios, jobs, and reports are stored in process memory and reset when the API restarts.
 
+### Historical OHLC data (M1)
+
+M1 adds a provider-neutral contract under `metis.data`: providers implement `HistoricalProvider.fetch_range`, returning canonical `OHLCObservation` values (or source dictionaries). Provider adapters are responsible for their own paging and throttling. `HistoricalDataService.ingest` retries transient retrieval failures, normalises and validates bars, writes valid and flagged observations idempotently, and returns a `QualityReport`. Configure provider credentials in the adapter; the core service has no provider dependency.
+
+Apply the `002_historical_bars` Alembic migration before using the persistence API. Validated data is available at `GET /api/v1/historical-data/{symbol}?timeframe=M15&start=...&end=...` where timestamps must be timezone-aware ISO 8601 values. The range is half-open (`start <= timestamp < end`). Only rows marked valid are returned. Existing synthetic `/market-data` routes remain mock endpoints and are not suitable for research datasets.
+
+The initial gap classifier uses UTC weekday/time heuristics for the conventional Friday-to-Sunday FX closure. It does not include a broker-specific session calendar or country holiday calendar; providers and downstream research should retain this limitation in dataset provenance. No missing prices are interpolated. Suspicious observations remain persisted and are excluded from validated retrieval. See `metis.data.example.ingest_eurusd_m15` for an ingestion workflow template.
+
 ## Project layout
 
 - `src/metis/` — FastAPI application, settings, database setup, and models

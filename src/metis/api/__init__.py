@@ -58,9 +58,11 @@ def create_app() -> FastAPI:
 
     # Include routers
     from metis.api.health import router as health_router
+    from metis.api.historical import router as historical_router
     from metis.api.mock_data import router as mock_data_router
     from metis.api.workflows import router as workflows_router
     app.include_router(health_router, prefix=settings.api.api_prefix)
+    app.include_router(historical_router, prefix=settings.api.api_prefix)
     app.include_router(mock_data_router, prefix=settings.api.api_prefix)
     app.include_router(workflows_router, prefix=settings.api.api_prefix)
 

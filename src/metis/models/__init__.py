@@ -13,6 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
+
 class Base(DeclarativeBase):
     """Base class for all database models."""
     pass
@@ -46,3 +47,7 @@ class UUIDMixin:
         default=uuid.uuid4,
         nullable=False,
     )
+
+
+# Register model metadata for Alembic autogeneration after Base exists.
+from metis.models import historical as _historical  # noqa: E402,F401
