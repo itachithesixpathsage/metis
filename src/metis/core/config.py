@@ -84,6 +84,12 @@ class MarketDataSettings(BaseSettings):
     validation_enabled: bool = True
     max_spread_bps: int = 50
     max_stale_minutes: int = 60
+    dukascopy_executable: str = "dukascopy-node"
+    dukascopy_cache_directory: str = ".cache/dukascopy-node"
+    dukascopy_batch_size: int = 4
+    dukascopy_batch_pause_ms: int = 1000
+    dukascopy_retries: int = 3
+    dukascopy_volume_units: Literal["millions", "thousands", "units"] = "units"
 
 
 class LoggingSettings(BaseSettings):
