@@ -84,7 +84,7 @@ async def run() -> dict:
     command[0] = resolved_command
     executable = shlex.join(command)
 
-    observations = [item async for item in DukascopyProvider(executable=resolved).fetch_range(
+    observations = [item async for item in DukascopyProvider(executable=executable).fetch_range(
         "EURUSD", "M1", start, end)]
     downloaded = len(observations)
     sides = Counter(item.price_side for item in observations)
