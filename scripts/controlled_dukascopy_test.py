@@ -17,6 +17,7 @@ import sys
 from collections import Counter
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
+from sqlalchemy import text
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -84,13 +85,31 @@ async def run() -> dict:
     command[0] = resolved_command
     executable = shlex.join(command)
 
-    observations = [item async for item in DukascopyProvider(executable=executable).fetch_range(
-        "EURUSD", "M1", start, end)]
+    # Verify that this exact configured database has the expected M1 schema
+    # before causing any provider traffic.
+    db_manager.initialize()
+    try:
+        async with db_manager.session() as preflight_session:
+            table = await preflight_session.scalar(text("SELECT to_regclass('market_data.historical_bars')"))
+            revision = await preflight_session.scalar(text("SELECT version_num FROM alembic_version"))
+            if table is None:
+                raise RuntimeError("market_data.historical_bars is missing in the configured database; run alembic upgrade head")
+            if revision != "003_historical_price_side":
+                raise RuntimeError(f"Expected migration 003_historical_price_side, found {revision!r}; run alembic upgrade head")
+    except Exception:
+        await db_manager.close()
+        raise
+
+    try:
+        observations = [item async for item in DukascopyProvider(executable=executable).fetch_range(
+            "EURUSD", "M1", start, end)]
+    except Exception:
+        await db_manager.close()
+        raise
     downloaded = len(observations)
     sides = Counter(item.price_side for item in observations)
     provider = ReplayProvider(observations)
 
-    db_manager.initialize()
     try:
         async with db_manager.session() as session:
             service = HistoricalDataService(session)
