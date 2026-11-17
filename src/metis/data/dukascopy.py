@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import shlex
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,7 +25,9 @@ class DukascopyProvider(HistoricalProvider):
                  batch_size: int | None = None, batch_pause_ms: int | None = None,
                  retries: int | None = None, runner: Any = None):
         settings = get_settings().market_data
-        self.executable = executable or settings.dukascopy_executable
+        self.executable = shlex.split(executable or settings.dukascopy_executable)
+        if not self.executable:
+            raise ValueError("Dukascopy executable command must not be empty")
         self.cache_directory = Path(cache_directory or settings.dukascopy_cache_directory)
         self.batch_size = batch_size or settings.dukascopy_batch_size
         self.batch_pause_ms = batch_pause_ms if batch_pause_ms is not None else settings.dukascopy_batch_pause_ms
@@ -73,7 +76,7 @@ class DukascopyProvider(HistoricalProvider):
         self.cache_directory.mkdir(parents=True, exist_ok=True)
         for side in ("bid", "ask"):
             with tempfile.TemporaryDirectory(prefix="metis-dukascopy-") as output_dir:
-                args = [self.executable, "-i", self.instruments[normalized],
+                args = [*self.executable, "-i", self.instruments[normalized],
                     "-from", start.astimezone(timezone.utc).isoformat(timespec="seconds"),
                     "-to", end.astimezone(timezone.utc).isoformat(timespec="seconds"),
                     "-t", self.timeframes[timeframe], "-p", side, "-utc", "0",

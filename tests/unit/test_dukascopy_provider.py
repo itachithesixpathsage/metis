@@ -25,6 +25,7 @@ async def test_fetches_bid_and_ask_independently_and_maps_utc_candles(tmp_path):
     assert all(row.timestamp == start and row.timestamp.tzinfo == timezone.utc for row in rows)
     assert rows[0].volume_type
     assert calls[0][calls[0].index("-t") + 1] == "m1"
+    assert calls[0][:2] == ["npx", "dukascopy-node"]
     assert calls[1][calls[1].index("-p") + 1] == "ask"
 
 

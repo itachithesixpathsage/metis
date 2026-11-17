@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import shlex
 import shutil
 import sys
 from collections import Counter
@@ -74,11 +75,14 @@ async def run() -> dict:
     end = datetime.combine(end_date, time.min, timezone.utc)
     settings = get_settings()
     executable = settings.market_data.dukascopy_executable
-    resolved = shutil.which(executable)
-    if not resolved and Path(executable).is_file():
-        resolved = str(Path(executable).resolve())
-    if not resolved:
+    command = shlex.split(executable)
+    resolved_command = shutil.which(command[0]) if command else None
+    if not resolved_command and command and Path(command[0]).is_file():
+        resolved_command = str(Path(command[0]).resolve())
+    if not resolved_command:
         raise RuntimeError(f"Dukascopy CLI not found: {executable}")
+    command[0] = resolved_command
+    executable = shlex.join(command)
 
     observations = [item async for item in DukascopyProvider(executable=resolved).fetch_range(
         "EURUSD", "M1", start, end)]
@@ -108,7 +112,7 @@ async def run() -> dict:
         counts_unchanged = all(len(before[s]) <= len(after_first[s]) for s in ("bid", "ask"))
         result = {
             "instrument": "EURUSD", "timeframe": "M1", "range_start_utc": start.isoformat(),
-            "range_end_utc_exclusive": end.isoformat(), "cli_path": resolved,
+            "range_end_utc_exclusive": end.isoformat(), "cli_command": executable,
             "rows_downloaded": downloaded, "downloaded_by_side": dict(sides),
             "accepted": len(first_report.accepted), "rejected_invalid": len(first_report.invalid),
             "flagged_suspicious": len(first_report.suspicious),
