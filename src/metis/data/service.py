@@ -12,6 +12,8 @@ from metis.data.schemas import OHLCObservation
 from metis.data.validation import QualityReport, validate_observations
 from metis.models.historical import HistoricalBar
 
+_INSERT_BATCH_SIZE = 1000
+
 
 class HistoricalDataService:
     def __init__(self, session: AsyncSession):
@@ -36,9 +38,12 @@ class HistoricalDataService:
                            source_metadata=x.source_metadata) for x in report.accepted]
             dialect = self.session.get_bind().dialect.name
             insert_statement = sqlite_insert if dialect == "sqlite" else pg_insert
-            statement = insert_statement(HistoricalBar).values(values).on_conflict_do_nothing(
-                index_elements=["symbol", "timeframe", "price_side", "timestamp"])
-            await self.session.execute(statement)
+            for offset in range(0, len(values), _INSERT_BATCH_SIZE):
+                statement = insert_statement(HistoricalBar).values(
+                    values[offset:offset + _INSERT_BATCH_SIZE]
+                ).on_conflict_do_nothing(
+                    index_elements=["symbol", "timeframe", "price_side", "timestamp"])
+                await self.session.execute(statement)
         rejected = [dict(symbol=item.symbol if isinstance(item, OHLCObservation) else "UNKNOWN",
                          timestamp=item.timestamp if isinstance(item, OHLCObservation) else start,
                          timeframe=timeframe,
@@ -52,8 +57,12 @@ class HistoricalDataService:
         if rejected:
             dialect = self.session.get_bind().dialect.name
             insert_statement = sqlite_insert if dialect == "sqlite" else pg_insert
-            await self.session.execute(insert_statement(HistoricalBar).values(rejected).on_conflict_do_nothing(
-                index_elements=["symbol", "timeframe", "price_side", "timestamp"]))
+            for offset in range(0, len(rejected), _INSERT_BATCH_SIZE):
+                statement = insert_statement(HistoricalBar).values(
+                    rejected[offset:offset + _INSERT_BATCH_SIZE]
+                ).on_conflict_do_nothing(
+                    index_elements=["symbol", "timeframe", "price_side", "timestamp"])
+                await self.session.execute(statement)
         if report.accepted or rejected:
             await self.session.commit()
         return report

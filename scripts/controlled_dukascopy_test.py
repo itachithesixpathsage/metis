@@ -17,6 +17,8 @@ import sys
 from collections import Counter
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
+
+from sqlalchemy.exc import OperationalError
 from sqlalchemy import text
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -96,6 +98,16 @@ async def run() -> dict:
                 raise RuntimeError("market_data.historical_bars is missing in the configured database; run alembic upgrade head")
             if revision != "003_historical_price_side":
                 raise RuntimeError(f"Expected migration 003_historical_price_side, found {revision!r}; run alembic upgrade head")
+    except OperationalError as exc:
+        await db_manager.close()
+        raise RuntimeError(
+            "Could not connect to the configured PostgreSQL database "
+            f"{settings.database.host}:{settings.database.port}/"
+            f"{settings.database.name}. In Cloud Shell, localhost refers to "
+            "the Cloud Shell VM; start/provide a reachable PostgreSQL or "
+            "TimescaleDB instance and set METIS_DB_HOST, METIS_DB_PORT, "
+            "METIS_DB_USERNAME, METIS_DB_PASSWORD, and METIS_DB_NAME."
+        ) from exc
     except Exception:
         await db_manager.close()
         raise

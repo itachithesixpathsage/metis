@@ -8,6 +8,7 @@ from metis.core.database import db_manager, get_db_session
 from metis.data.provider import HistoricalProvider
 from metis.data.schemas import OHLCObservation
 from metis.data.service import HistoricalDataService
+import metis.data.service as historical_service
 
 
 class SampleProvider(HistoricalProvider):
@@ -53,6 +54,26 @@ async def test_bid_and_ask_share_timestamp_and_retrieve_independently(db_session
     assert bid[0].close == 1.1
     assert ask[0].close == 1.1002
     assert unspecified == []
+
+
+@pytest.mark.asyncio
+async def test_ingestion_chunks_large_insert_batches(db_session, monkeypatch):
+    """Keep bulk inserts below database bind-parameter limits."""
+    start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    rows = [
+        OHLCObservation(symbol="EURUSD", timeframe="M1", timestamp=start + timedelta(minutes=i),
+                        open=1.1, high=1.101, low=1.099, close=1.1, source="fixture")
+        for i in range(5)
+    ]
+    monkeypatch.setattr(historical_service, "_INSERT_BATCH_SIZE", 2)
+    service = HistoricalDataService(db_session)
+
+    report = await service.ingest(SampleProvider(rows), "EURUSD", "M1", start,
+                                  start + timedelta(minutes=5))
+    stored = await service.retrieve("EURUSD", "M1", start, start + timedelta(minutes=5))
+
+    assert len(report.accepted) == 5
+    assert len(stored) == 5
 
 
 @pytest.mark.asyncio
